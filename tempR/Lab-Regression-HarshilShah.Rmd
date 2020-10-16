@@ -1,0 +1,123 @@
+---
+title: "Lab_Regression"
+output: html_document
+---
+
+```{r}
+#Load all relevant libraries
+library(e1071)
+library(tidyverse)
+library(ggplot2)
+#Load dataset
+lab_df <- read.csv("/Users/harshilshah/Documents/tempR/Lab-Dataset.csv")
+#Create Scatterplot for all X vs All Four Dependent Variables
+scatter.smooth(x=lab_df$X, y = lab_df$TV, main="TV ~ X")
+```
+```{r}
+scatter.smooth(x=lab_df$X, y = lab_df$Radio, main="Radio ~ X")
+```
+
+```{r}
+scatter.smooth(x=lab_df$X, y = lab_df$Newspaper, main="Newspaper ~ X")
+```
+
+```{r}
+scatter.smooth(x=lab_df$X, y = lab_df$Sales, main="Sales ~ X")
+```
+
+
+
+```{r}
+par(mfrow=c(1,4))
+#Create boxplot for all four variables.
+boxplot(lab_df$TV, main="TV Boxplot")
+boxplot(lab_df$Radio, main="Radio Boxplot")
+boxplot(lab_df$Newspaper, main="Newspaper Boxplot")
+boxplot(lab_df$Sales, main = "Sales Boxplot")
+```
+
+```{r}
+#Create DensityPlot for all four variables.
+par(mfrow=c(1,4))
+
+plot(density(lab_df$TV), ylab='TV', sub=paste('Skewness:', round(e1071::skewness(lab_df$TV),2)), main="TV DensityPlot")
+polygon(density(lab_df$TV), col='red')
+
+plot(density(lab_df$Radio), ylab='Radio', sub=paste('Skewness:', round(e1071::skewness(lab_df$Radio),2)), main = "Radio DensityPlot")
+polygon(density(lab_df$Radio), col='red')
+
+plot(density(lab_df$Newspaper), ylab='Newspaper', sub=paste('Skewness:', round(e1071::skewness(lab_df$Newspaper),2)),main="Newspaper DensityPlot")
+polygon(density(lab_df$Newspaper), col='red')
+
+plot(density(lab_df$Sales), ylab='Sales', sub=paste('Skewness:', round(e1071::skewness(lab_df$Sales),2)), main = "Sales DensityPlot")
+polygon(density(lab_df$Sales), col='red')
+```
+
+```{r}
+
+#Calculate Correlation and print it out. Correlation is the same front and back so we don't need to repeat.
+x <- cor(lab_df$TV, lab_df$Radio)
+y <- cor(lab_df$TV, lab_df$Newspaper)
+z <- cor(lab_df$TV, lab_df$Sales)
+
+cat("TV vs Radio Corr.: ", x, "\n")
+cat("TV vs Newspaper Corr.: ", y, "\n")
+cat("TV vs Sales Corr.: ", z, "\n")
+
+y <- cor(lab_df$Radio, lab_df$Newspaper)
+z <- cor(lab_df$Radio, lab_df$Sales)
+
+cat("Radio vs Newspaper Corr.: ", y, "\n")
+cat("Radio vs Sales Corr.: ", z, "\n")
+
+z <- cor(lab_df$Newspaper, lab_df$Sales)
+
+cat("Newspaper vs Sales Corr.: ", z, "\n")
+```
+
+```{r}
+#Create train and test data. 3/4 of the data set to train. Last 1/4 to test models.
+
+lab_df_train <- lab_df[1:150, ]
+lab_df_test <- lab_df[151:200, ]
+
+lm_SalesTV <- lm(Sales ~ TV, lab_df_train)
+lm_SalesRadio <- lm(Sales ~ Radio, lab_df_train)
+lm_SalesNewspaper <- lm(Sales ~ Newspaper, lab_df_train)
+
+lm_SalesAll <- lm(Sales ~ TV + Radio + Newspaper, lab_df_train)
+
+pred_SalesTV <- predict(lm_SalesTV, lab_df_test)
+#actual_SalesTV <- data.frame(cbind(actuals=lab_df_test$Sales, predicted=pred_SalesTV))
+
+pred_SalesRadio <- predict(lm_SalesRadio, lab_df_test)
+#actual_SalesRadio <- data.frame(cbind(actuals=lab_df_test$Sales, predicted=pred_SalesRadio))
+
+pred_SalesNewspaper <- predict(lm_SalesNewspaper, lab_df_test)
+#actual_SalesNewspaper <- data.frame(cbind(actuals=lab_df_test$Sales, predicted=pred_SalesNewspaper))
+
+pred_SalesAll <- predict(lm_SalesAll, lab_df_test)
+#actual_SalesAll <- data.frame(cbind(actuals=lab_df_test$Sales, predicted=pred_SalesAll))
+
+#Combine all predicted values in one data frame -- no need for four separate frames.
+actual_AllModels <- data.frame(cbind(Actual_Sales=lab_df_test$Sales, Pred_TV_LM = pred_SalesTV, Pred_Radio_LM = pred_SalesRadio, Pred_Newspaper_LM = pred_SalesNewspaper, Pred_All = pred_SalesAll))
+
+#Plot. I was unable to print legends. I tried multiple times. 
+ggplot(data = lab_df_test) + 
+  geom_point(aes(x=X, y = Sales)) + 
+  geom_point(aes(x=X, y = actual_AllModels$Pred_TV_LM), color = "blue") + 
+  geom_point(aes(x=X, y=actual_AllModels$Pred_Radio_LM), color = "red") + 
+  geom_point(aes(x=X, y=actual_AllModels$Pred_Newspaper_LM), color = "yellow") + 
+  geom_point(aes(x=X, y=actual_AllModels$Pred_All), color = "green") + 
+  geom_line(aes(x = X,y = actual_AllModels$Pred_TV_LM), color = "blue") + 
+  geom_line(aes(x = X,y = actual_AllModels$Pred_Radio_LM), color = "red") + 
+  geom_line(aes(x = X,y = actual_AllModels$Pred_Newspaper_LM), color = "yellow") + 
+  geom_line(aes(x = X,y = actual_AllModels$Pred_All), color = "green") +
+geom_line(aes(x = X,y = Sales), color = "black")
+
+```
+
+
+#Conclusion: We can notice the black line, which denotes actual Sales that it has huge variance between each point. If we just look at that and notice other models, we find that Yellow line - Sales vs Newspaper, does not have high variance. As a result we can conclude it is not an accurate predictor for all values as the error values between highly varied values would be big. This may be because of the outliers present, which we did not eliminate. We notice that Blue and Red are on a similar boat, however they are opposite at somevalues. Specifically, there are values at which the actual point would be X and Red would show X+2 and Blue would show X-2. While we may not know the strength of those two models, we can rest assured that model with Sales ~ TV + Newspaper + Radio is the strongest as it follows the Black line almost perfectly. This shows the error between actual vs predicted would be far less across all 50 values. As a result, the model LM(Sales ~ TV + Newspaper + Radio) is the most accurate one. 
+
+

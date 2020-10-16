@@ -1,0 +1,49 @@
+---
+title: "BigDataAnalytics-Lab-1"
+output: html_notebook
+---
+
+Load gap and geo csvs.
+```{r}
+gap <- read.csv("/Users/harshilshah/Documents/tempR/gap.csv")
+geo <- read.csv("/Users/harshilshah/Documents/tempR/geo.csv")
+```
+
+gap.csv contains pop. vs. year.
+
+Get total population per year and plot.
+
+Installed package dplyr on console.
+
+by_year stores only YEAR and POPULATION variables from gap data frame. Then, group_by on YEAR to group all population together by year and the summarize function sums all those population values up into one entry per year.
+
+Then, I use ggplot function to plot the by_year data with aesthetic values of x as year and y as population. 
+I plot each point using geom_point() and a line through it for clarity using geom_line();
+
+```{r}
+library(dplyr)
+
+by_year <- gap %>% select(year, population) %>% group_by(year) %>% summarize(population = sum(population), .groups='drop')
+
+p <- ggplot(by_year, aes(x=year, y =population)) + geom_point() + geom_line()
+p + labs(title = "Year vs. Population",
+            x = "Year",
+            y = "Population")
+```
+
+Now, we need to create a data frame where you have year and pop X gdp_percap calculated.
+Start with by_year_gdp_df where you select three necessary attributes and transmute (ignoring NA values) so that you have only 2 remaining attributes with one being year and second being population X gdp_percap.
+
+Then, take that data frame and group it again by year and summarize it using sum of total_gdp (added na.rm=TRUE for safety but not necessary)
+
+Then plot it the same way as above.
+```{r}
+by_year_gdp_df <- gap %>% select(year, population, gdp_percap) %>% transmute(year, total_gdp = population * gdp_percap, na.rm=TRUE)
+
+grouped_total_gdp <- by_year_gdp_df %>% group_by(year) %>% summarize(final_total_gdp = sum(total_gdp, na.rm=TRUE), .groups='drop')
+
+p <- ggplot(grouped_total_gdp, aes(x=year, y=final_total_gdp)) + geom_point() + geom_line()
+p + labs(title = "Year vs. Total GDP",
+            x = "Year",
+            y = "Total GDP")
+```

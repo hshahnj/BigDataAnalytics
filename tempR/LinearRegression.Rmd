@@ -1,0 +1,47 @@
+---
+title: "LinearRegression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+cars
+```
+```{r}
+scatter.smooth(x=cars$speed, y=cars$dist, main="Distance ~ Speed")
+```
+```{r}
+par(mfrow=c(1,2))
+
+boxplot(cars$speed, sub=paste("Outlier rows:",boxplot.stats(cars$speed)$out))
+
+boxplot(cars$dist, sub=paste("Outlier rows:",boxplot.stats(cars$dist)$out))
+```
+
+remove the outlier in dist
+
+```{r}
+dist_outlier <- boxplot(cars$dist, plot=FALSE)$out
+
+new_cars <- cars[-which(cars$dist %in% dist_outlier),]
+
+new_cars
+```
+
+
+```{r}
+library(e1071)
+
+par(mfrow=c(1,2))
+
+plot(density(new_cars$speed), ylab = 'Speed', sub=paste('Skewness:', round(e1071::skewness(new_cars$speed),2)))
+
+polygon(density(new_cars$speed), col='red')
+
+plot(density(new_cars$dist), ylab = 'Distance', sub=paste('Skewness:', round(e1071::skewness(new_cars$dist),2)))
+
+polygon(density(new_cars$dist), col='red')
+```
